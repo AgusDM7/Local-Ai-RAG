@@ -1,11 +1,11 @@
-from langchain_ollama import OllamaEmbeddings
-from langchain_chroma import Chroma
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_ollama import OllamaEmbeddings # generar vectores.
+from langchain_chroma import Chroma # base de datos vectorial
+from langchain_text_splitters import RecursiveCharacterTextSplitter # intenta cortar en lugares "naturales"
+from langchain_community.document_loaders import PyPDFLoader 
 import os
 
 
-# PDF a procesar
+# Se define la variable con la ruta del PDF
 PDF_PATH = "google_privacy_policy.pdf"
 
 # definimos el modelo de embeddings de ollama (texto -> vector numérico)
@@ -16,8 +16,8 @@ embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 db_location = "./chrome_langchain_db"
 add_documents = not os.path.exists(db_location) 
 
+### si add_documents = True (la carpeta NO existe) ###
 
-# Si la base vectorial no existe, se crean los documentos
 if add_documents:
     print("Cargando PDF...")
 
@@ -27,15 +27,21 @@ if add_documents:
 
     # Dividir en fragmentos (chunks)
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=1000, #caracteres
+        chunk_overlap=200 #solapamiento (transicion entre caracteres)
     )
 
-    documents = text_splitter.split_documents(pages)
+    documents = text_splitter.split_documents(pages) # split_documents funcion -> dividir documentos
 
 
-# Se inicializa el almacen de vectores (bd vectorial) y se le asigna el modelo de embeddings.
-# objeto de tipo Chroma
+
+
+
+# Se inicializa el almacen de vectores "Constructor" (bd vectorial) y se le asigna el modelo de embeddings.
+
+# A nivel interno Chroma realiza...
+# Si la carpeta ya existía, esto ABRE la base de datos existente en disco. 
+# Si no existía, esto CREA una base de datos vacía nueva.
 almacen_vectores = Chroma(
     collection_name="google_privacy_policy",
     persist_directory = db_location,
@@ -43,7 +49,7 @@ almacen_vectores = Chroma(
 )
 
 
-# Si no existe ./chrome_langchain_db agrega los datos al almacen de vectores 
+### si add_documents = True (la carpeta NO existe) ### agrega los datos al almacen de vectores 
 # Realiza el embedding automaticamente a cada documento y lo guarda en la base de datos vectorial.
 if add_documents:
     almacen_vectores.add_documents(documents)
@@ -54,8 +60,9 @@ if add_documents:
 
 
 # Retriever: componente que se encarga de recuperar los documentos relevantes a partir de una consulta.
+# Se ejecuta siempre
 retriever = almacen_vectores.as_retriever(
-    search_kwargs={"k": 5}
+    search_kwargs={"k": 5} # k es la cantidad de documentos (chunks) más similares que devuelva la búsqueda por similitud.
 )
 
 

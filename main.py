@@ -23,9 +23,11 @@ Pregunta:
 
 
 prompt = ChatPromptTemplate.from_template(template)
-chain = prompt | model
+chain = prompt | model 
+# Se conecta el prompt con el modelo 
 
 
+#Bucle principal de ejecución segun usuario 
 while True:
     print("\n\n-------------------------------")
     question = input("Ingrese su pregunta (q para salir): ")
@@ -46,8 +48,10 @@ while True:
 
 
 
-    # El retriever se encarga de recuperar los documentos relevantes a partir de la pregunta del usuario utilizando "almacen_vectores".
+    # El retriever (definido en vector.py, con k=5) busca de nuevo los 5 chunks más relevantes y los guarda en datos
     datos = retriever.invoke(question)
+
+    # Generación de la respuesta
     result = chain.invoke({"datos": datos, "question": question})
 
     print ("\nRespuesta del asistente:")
